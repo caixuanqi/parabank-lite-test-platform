@@ -14,7 +14,16 @@ from parabank_lite import reset_demo_data  # noqa: E402
 
 @pytest.fixture(scope='session', autouse=True)
 def demo_data():
-    """套件执行前置：重置预置演示数据（余额/账号等前置条件可重复）。"""
+    """套件执行前置：重置预置演示数据。"""
+    reset_demo_data()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def demo_data_per_case():
+    """注册用例会创建账号，且用例表中多条"注册成功"用例复用同一个用户名，
+    因此每条用例前都重置演示数据，保证"用户名未注册"这一隐含前置条件成立。
+    """
     reset_demo_data()
     yield
 

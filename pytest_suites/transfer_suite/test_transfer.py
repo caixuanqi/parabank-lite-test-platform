@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""转账模块测试套件 —— 18 条用例（TRAN_001 ~ TRAN_018）。
+"""转账模块测试套件 —— 16 条用例（TRAN_01 ~ TRAN_16）。
 
-用例数据来自 testcase_spec.py，与《ParaBank Lite 业务规则与测试用例设计》
-第四节用例表一致；提示文案与被测系统 parabank_lite.py 严格对齐。
-前置条件：以预置账号 admin 登录后进入转账页。
+用例数据来自 testcase_spec.py，与《ParaBank Lite 业务规则与测试用例设计（最新版）》
+及《转账模块测试用例.xlsx》一致；提示文案与被测系统 parabank_lite.py 严格对齐。
+前置条件：以预置账号 admin_01 登录后进入转账页。
 """
 import os
 
@@ -15,11 +15,11 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from browser_setup import (fail_with_screenshot, override_cases, save_screenshot,
                            wait_any_message)
-from testcase_spec import PRESET_USERS, cases_of
+from testcase_spec import TRANSFER_USER, cases_of
 
 CASES = override_cases(cases_of('transfer'))
 WAIT = int(os.environ.get('PB_WAIT', '8'))   # 等待元素的秒数，可用 PB_WAIT 调整
-ADMIN = next(u for u in PRESET_USERS if u['username'] == 'admin')
+TRANSFER_ACCOUNT, TRANSFER_PASSWORD = TRANSFER_USER
 
 
 def _message(driver, case, selector):
@@ -39,8 +39,8 @@ def _login(driver, base_url):
     driver.get(f'{base_url}/login')
     WebDriverWait(driver, WAIT).until(
         EC.presence_of_element_located((By.NAME, 'username')))
-    driver.find_element(By.NAME, 'username').send_keys(ADMIN['username'])
-    driver.find_element(By.NAME, 'password').send_keys(ADMIN['password'])
+    driver.find_element(By.NAME, 'username').send_keys(TRANSFER_ACCOUNT)
+    driver.find_element(By.NAME, 'password').send_keys(TRANSFER_PASSWORD)
     driver.find_element(By.ID, 'btn-login').click()
     WebDriverWait(driver, WAIT).until(lambda d: '/accounts' in d.current_url)
 

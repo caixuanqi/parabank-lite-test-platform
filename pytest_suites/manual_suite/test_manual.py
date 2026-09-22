@@ -171,8 +171,8 @@ def test_manual_register(driver, base_url):
 
 def test_manual_transfer(driver, base_url):
     """用填写的信息转一次账（登录用预置账号，可用 PB_LOGIN_USER 覆盖）"""
-    username = _env('login_user', 'admin')
-    password = _env('login_password', 'admin123')
+    username = _env('login_user', 'admin_01')
+    password = _env('login_password', 'Admin@123')
     from_acc = _env('from_account', '10001')
     to_acc = _env('to_account', '10002')
     amount = _env('amount', '100')

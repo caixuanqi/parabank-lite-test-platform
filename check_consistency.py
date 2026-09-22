@@ -22,14 +22,14 @@ import testcase_spec as spec  # noqa: E402
 DATA_LAYER_CASES = {
     'LOGIN_002': '密码比对（check_password_hash）',
     'LOGIN_003': '账号存在性查询',
-    'REG_002': '用户名唯一性查询',
-    'TRAN_016': '源账户余额校验',
-    'TRAN_018': '目标账户存在性查询',
+    'REG_010': '用户名唯一性查询',
+    'TRAN_14': '源账户余额校验',
+    'TRAN_16': '目标账户存在性查询',
 }
 
 # 本期用例表基线（用例表调整后在这里同步一次，用来兜住误改）
-EXPECT_CASES = {'login': 10, 'register': 11, 'transfer': 18}
-EXPECT_PRIORITY = {'P0': 13, 'P1': 21, 'P2': 5}
+EXPECT_CASES = {'login': 13, 'register': 22, 'transfer': 16}
+EXPECT_PRIORITY = {'P0': 17, 'P1': 24, 'P2': 10}
 
 RESULTS = []
 
@@ -230,9 +230,9 @@ def check_docs():
     check('文档：测试规则文档.md 使用 LOGIN_001 风格编号',
           not re.search(r'TC-[A-Z]+-\d+', rules_md) and 'LOGIN_001' in rules_md)
     expect_total = sum(EXPECT_CASES.values())
-    check(f'文档：测试规则文档.md 已写明 {expect_total} 条用例',
-          f'共 {expect_total} 条' in rules_md,
-          f"未找到「共 {expect_total} 条」")
+    ok_count = f'共 {expect_total} 条' in rules_md
+    check(f'文档：测试规则文档.md 已写明 {expect_total} 条用例', ok_count,
+          '' if ok_count else f"未找到「共 {expect_total} 条」")
 
 
 # ============ F. 被测系统在线（可选） ============

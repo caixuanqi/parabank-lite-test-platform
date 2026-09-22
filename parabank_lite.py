@@ -19,30 +19,30 @@ PASSWORD_RE = re.compile(r'^[A-Za-z0-9@#$_\.]+$')
 AMOUNT_RE = re.compile(r'^-?[\d.]*$')
 
 # ============================================================
-# 注入缺陷（演示用）：BUG-01 ~ BUG-06。
+# 注入缺陷（演示用）：BUG-01 ~ BUG-03。
 # 登记表见 testcase_spec.INJECTED_DEFECTS，每个缺陷都注明它违反文档的哪条
 # 规则、预期让哪几条用例失败。置为 False 即恢复"完全符合文档"的系统，
-# 45 条用例应当全绿。
+# 51 条用例应当全绿。
 # ============================================================
 INJECT_DEFECTS = True
 
-# 提示文案与校验顺序严格对齐《ParaBank Lite 业务规则与测试用例设计》
-# 第四节用例表的"预期结果"列，pytest 套件按同一文案断言。
+# 提示文案与校验顺序严格对齐《ParaBank Lite 业务规则与测试用例设计（最新版）》
+# 与三张模块用例表的"预期结果"列，pytest 套件按同一文案断言。
 
 
 def validate_login(username, password):
     if not username:
         return False, '用户名必填'
-    if not (3 <= len(username) <= 20):
-        return False, '用户名长度3-20位'
+    if not (6 <= len(username) <= 20):
+        return False, '用户名长度6-20位'
     if not USERNAME_RE.match(username):
-        return False, '用户名只能含字母数字下划线'
+        return False, '用户名只能含字母、数字、下划线'
     if not password:
         return False, '密码必填'
     if not (6 <= len(password) <= 20):
         return False, '密码长度6-20位'
     if not PASSWORD_RE.match(password):
-        return False, '密码只能包含字母、数字和 @ # $ . _'
+        return False, '密码只允许字母、数字和字符@#$._'
     return True, None
 
 
@@ -52,36 +52,35 @@ def validate_register(username, password, confirm):
     if not (6 <= len(username) <= 20):
         return False, '用户名长度6-20位'
     if not USERNAME_RE.match(username):
-        return False, '用户名只能含字母数字下划线'
+        return False, '用户名只能包含字母、数字和下划线'
     if not password:
         return False, '密码必填'
     if not (6 <= len(password) <= 20):
         return False, '密码长度6-20位'
     if not PASSWORD_RE.match(password):
-        return False, '密码只能包含字母、数字和 @ # $ . _'
+        return False, '密码只能包含字母、数字和@#$._'
     if not (re.search(r'[A-Za-z]', password) and re.search(r'\d', password)):
-        return False, '密码必须含字母和数字'
+        return False, '密码必须包含字母和数字'
     if password != confirm:
         return False, '两次密码不一致'
-    # 手机号、邮箱本期不做（见 testcase_spec.RULES 注册第 7 条的偏差说明）
     return True, None
 
 
 def validate_transfer(amount_str, from_acc, to_acc):
     if not amount_str or not amount_str.strip():
-        return False, None, '金额不能为空'
+        return False, None, '转账金额不能为空'
     s = amount_str.strip()
     if not AMOUNT_RE.match(s):
-        return False, None, '金额只能输入数字和小数点'
-    # BUG-06：漏做"小数点最多1个"校验（违反规则 2.3(4)，
-    #         预期 TRAN_013 的提示变成"金额最多2位小数"）
+        return False, None, '只能输入数字和小数点'
+    # BUG-03：漏做"仅允许一个小数点"校验（违反规则 2.3(4)，
+    #         预期 TRAN_11 的提示变成"金额最多保留2位小数"）
     if s.count('.') > 1 and not INJECT_DEFECTS:
-        return False, None, '小数点最多1个'
+        return False, None, '仅允许一个小数点'
     body = s[1:] if s.startswith('-') else s
     if body in ('', '.') or body.startswith('.'):
         return False, None, '请输入有效金额'
     if '.' in body and len(body.split('.', 1)[1]) > 2:
-        return False, None, '金额最多2位小数'
+        return False, None, '金额最多保留2位小数'
     try:
         amount = float(s)
     except ValueError:
@@ -89,11 +88,11 @@ def validate_transfer(amount_str, from_acc, to_acc):
     if amount <= 0:
         return False, None, '金额必须大于0'
     # BUG-02：上限边界判断写成"≥ 50000 即超限"（违反规则 2.3(2)，
-    #         预期边界值 50000.00 的 TRAN_005 失败）
+    #         预期边界值 50000.00 的 TRAN_05 失败）
     if amount > 50000 or (INJECT_DEFECTS and amount == 50000):
-        return False, None, '单笔不超过50000元'
+        return False, None, '单笔金额不能超过50000元'
     if from_acc and to_acc and from_acc == to_acc:
-        return False, None, '账户不能相同'
+        return False, None, '源账户和目标账户不能相同'
     return True, amount, None
 
 
@@ -105,11 +104,14 @@ def get_db():
 
 
 # 预置演示数据（与 testcase_spec.PRESET_USERS 保持一致，check_consistency.py 会校验）
-# admin：登录用例 + 转账用例（10001 余额充足 / 10002 转入 / 10003 余额不足专用）
-# user_2026：REG_002"用户名已存在"所需的 6~20 位已注册账号
+# admin_01：登录模块的合规账号（等价类指定），同时持有转账用账户
+#           10001 余额充足 / 10002 转入 / 10003 余额不足专用
+# admin：文档"初始账号"，保留但不再持有账户
+# user_2026：登录/注册等价类中列出的有效数据
 PRESET_USERS = [
-    {'username': 'admin', 'password': 'admin123',
+    {'username': 'admin_01', 'password': 'Admin@123',
      'accounts': [('10001', 100000.00), ('10002', 0.00), ('10003', 100.00)]},
+    {'username': 'admin', 'password': 'admin123', 'accounts': []},
     {'username': 'user_2026', 'password': 'Pass123',
      'accounts': [('20002', 0.00)]},
 ]
@@ -223,8 +225,7 @@ def login():
             user = conn.execute("SELECT * FROM pb_users WHERE username=?",
                                 (username,)).fetchone()
             conn.close()
-            # BUG-01：未区分"账号不存在"与"密码错误"（违反规则 2.1(5)(6)。
-            #         文档第六节应选"方案 1：区分"，此处刻意按方案 2 实现，
+            # BUG-01：未区分"账号不存在"与"密码错误"（违反规则 2.1(5)(6)，
             #         预期 LOGIN_002、LOGIN_003 失败）
             if not user:
                 error = '用户名或密码错误' if INJECT_DEFECTS else '账号不存在'
@@ -266,9 +267,7 @@ def register():
                              (uid, acc_num, 0.0))
                 conn.commit()
                 conn.close()
-                # BUG-04：注册成功后不渲染成功提示（用例 REG_001 预期"注册成功"，
-                #         实际等不到 .msg.success 元素 → 超时失败）
-                success = None if INJECT_DEFECTS else '注册成功，请登录'
+                success = '注册成功，请登录'
     return render_template('parabank/register.html', error=error, success=success)
 
 
@@ -311,7 +310,7 @@ def transfer():
             elif not dst:
                 error = '目标账户不存在'
             elif src['balance'] < amount:
-                error = '余额不足'
+                error = '账户余额不足'
             else:
                 conn.execute("UPDATE pb_accounts SET balance=balance-? WHERE account_number=?",
                              (amount, from_acc))
@@ -320,10 +319,8 @@ def transfer():
                 conn.execute("INSERT INTO pb_transactions (from_account, to_account, amount, txn_type, status) VALUES (?, ?, ?, 'TRANSFER', 'SUCCESS')",
                              (from_acc, to_acc, amount))
                 conn.commit()
-                # BUG-05：转账成功后不渲染成功提示（用例 TRAN_001~005 预期"转账成功"，
-                #         实际等不到 .msg.success 元素 → 超时失败）
-                success = None if INJECT_DEFECTS else (
-                    '转账成功: %s -> %s, 金额 %.2f 元' % (from_acc, to_acc, amount))
+                success = ('转账成功: %s -> %s, 金额 %.2f 元'
+                           % (from_acc, to_acc, amount))
 
     accs = conn.execute("SELECT * FROM pb_accounts WHERE user_id=? ORDER BY id",
                         (session['pb_user_id'],)).fetchall()
