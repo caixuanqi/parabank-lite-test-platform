@@ -1,0 +1,31 @@
+# ---- 环境与凭据（一律不入库）----
+.venv/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# ---- 运行时产物（首次启动会自动重建）----
+parabank_test.db
+parabank_test.db-journal
+parabank_test.db-wal
+parabank_test.db-shm
+reports/
+screenshots/
+
+# ---- 早期版本的脚本：选择器与写库字段已与现版本不符，未纳入本仓库 ----
+para_test.py
+test_engine.py
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

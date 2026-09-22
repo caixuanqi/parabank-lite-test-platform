@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>ParaBank Lite — 交易记录</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+       background:#f0f4f8; padding:30px; }
+.card { background:#fff; border-radius:12px; padding:28px 32px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.08);
+        max-width:900px; margin:0 auto; }
+h1 { font-size:20px; margin-bottom:6px; color:#1a3d7c; }
+.subtitle { font-size:13px; color:#909399; margin-bottom:20px; }
+.topbar { display:flex; justify-content:space-between; align-items:center;
+          margin-bottom:20px; padding-bottom:16px;
+          border-bottom:1px solid #ebeef5; }
+.topbar .user { font-size:13px; color:#606266; }
+.topbar .user b { color:#1a3d7c; }
+.topbar a { font-size:13px; color:#409eff; text-decoration:none; margin-left:14px; }
+table { width:100%; border-collapse:collapse; margin-top:12px; }
+th { text-align:left; padding:10px 12px; background:#fafbfc;
+     font-size:12px; color:#909399; font-weight:500;
+     border-bottom:1px solid #ebeef5; }
+td { padding:12px; font-size:13px; border-bottom:1px solid #f5f7fa; }
+.balance { color:#67c23a; font-weight:600; }
+</style></head>
+<body>
+<div class="card">
+    <div class="topbar">
+        <div class="user">欢迎，<b>{{ username }}</b></div>
+        <div>
+            <a href="/parabank/accounts">账户</a>
+            <a href="/parabank/transfer">转账</a>
+            <a href="/parabank/logout" id="btn-logout">退出</a>
+        </div>
+    </div>
+    <h1>交易记录</h1>
+    <p class="subtitle">最近 50 条</p>
+    {% if transactions %}
+    <table id="txTable">
+        <thead><tr><th>ID</th><th>源账户</th><th>目标账户</th>
+                   <th>金额</th><th>类型</th><th>状态</th><th>时间</th></tr></thead>
+        <tbody>
+            {% for t in transactions %}
+            <tr>
+                <td>{{ t.id }}</td>
+                <td>{{ t.from_account }}</td>
+                <td>{{ t.to_account }}</td>
+                <td class="balance">¥ {{ "%.2f"|format(t.amount) }}</td>
+                <td>{{ t.txn_type }}</td>
+                <td>{{ t.status }}</td>
+                <td>{{ t.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="padding:30px 0; text-align:center; color:#c0c4cc; font-size:13px;">
+        暂无交易记录</p>
+    {% endif %}
+</div>
+</body></html>

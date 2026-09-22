@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>ParaBank 金融业务测试平台</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="static/lib/element-plus.css">
+<script src="static/lib/vue.global.prod.js"></script>
+<script src="static/lib/element-plus.full.min.js"></script>
+<script src="static/lib/element-plus-icons.js"></script>
+<script src="static/lib/echarts.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; }
+#app { height:100vh; }
+.sidebar { background:#1d2b46; color:#fff; }
+.sidebar .logo { height:60px; display:flex; align-items:center; padding:0 20px;
+    font-size:16px; font-weight:600; border-bottom:1px solid rgba(255,255,255,0.08); }
+.sidebar .logo .dot { width:8px; height:8px; background:#409eff; border-radius:50%;
+    margin-right:10px; box-shadow:0 0 8px #409eff; }
+.el-menu { border-right:none; background:transparent; }
+.el-menu-item { color:#b8c4d8; height:48px; line-height:48px; }
+.el-menu-item:hover { background:rgba(64,158,255,0.1); color:#fff; }
+.el-menu-item.is-active { background:#409eff; color:#fff; }
+.header { background:#fff; border-bottom:1px solid #eee; display:flex;
+    align-items:center; justify-content:space-between; padding:0 24px; height:60px; }
+.header .title { font-size:15px; color:#333; }
+.header .user { display:flex; align-items:center; gap:10px; }
+.header .avatar { width:32px; height:32px; border-radius:50%;
+    background:linear-gradient(135deg,#409eff,#67c23a); display:flex;
+    align-items:center; justify-content:center; color:#fff; font-size:13px; }
+.main { background:#f5f7fa; padding:20px; overflow-y:auto; height:calc(100vh - 60px); }
+.stat-card { background:#fff; border-radius:10px; padding:20px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.05); display:flex; align-items:center; gap:16px; }
+.stat-icon { width:56px; height:56px; border-radius:12px; display:flex;
+    align-items:center; justify-content:center; font-size:24px; color:#fff; }
+.stat-icon.blue { background:linear-gradient(135deg,#409eff,#66b1ff); }
+.stat-icon.green { background:linear-gradient(135deg,#67c23a,#95d475); }
+.stat-icon.orange { background:linear-gradient(135deg,#e6a23c,#f3d19e); }
+.stat-icon.red { background:linear-gradient(135deg,#f56c6c,#fab6b6); }
+.stat-num { font-size:26px; font-weight:700; color:#1f2d3d; }
+.stat-label { font-size:13px; color:#909399; margin-top:4px; }
+.chart-box { background:#fff; border-radius:10px; padding:16px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+.chart-box .chart-title { font-size:14px; font-weight:600; color:#1f2d3d;
+    margin-bottom:12px; padding-left:8px; border-left:3px solid #409eff; }
+.status-PASS { color:#67c23a; font-weight:600; }
+.status-FAIL { color:#f56c6c; font-weight:600; }
+.status-ERROR { color:#e6a23c; font-weight:600; }
+.status-SKIP { color:#909399; font-weight:600; }
+.status-RUNNING { color:#409eff; font-weight:600; }
+.traceback { background:#1e1e1e; color:#d4d4d4; padding:14px; border-radius:6px;
+    font-family:'Consolas',monospace; font-size:12px; line-height:1.6;
+    max-height:400px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
+.chart-empty { text-align:center; color:#c0c4cc; font-size:13px;
+    padding-top:100px; }
+</style>
+</head>
+<body>
+<div id="app">
+    <el-container style="height:100vh;">
+        <el-aside width="220px" class="sidebar">
+            <div class="logo"><span class="dot"></span>ParaBank 测试平台</div>
+            <el-menu :default-active="activeMenu" @select="onMenuSelect">
+                <el-menu-item index="dashboard">
+                    <el-icon><Odometer></Odometer></el-icon><span>系统概览</span>
+                </el-menu-item>
+                <el-menu-item index="run">
+                    <el-icon><VideoPlay></VideoPlay></el-icon><span>执行测试</span>
+                </el-menu-item>
+                <el-menu-item index="suites">
+                    <el-icon><FolderOpened></FolderOpened></el-icon><span>测试套件</span>
+                </el-menu-item>
+                <el-menu-item index="cases">
+                    <el-icon><Document></Document></el-icon><span>测试用例</span>
+                </el-menu-item>
+                <el-menu-item index="runs">
+                    <el-icon><List></List></el-icon><span>执行记录</span>
+                </el-menu-item>
+                <el-menu-item index="results">
+                    <el-icon><WarningFilled></WarningFilled></el-icon><span>结果明细</span>
+                </el-menu-item>
+            </el-menu>
+        </el-aside>
+
+        <el-container>
+            <el-header class="header">
+                <div class="title">{{ pageTitle }}</div>
+                <div class="user">
+                    <el-icon><Bell></Bell></el-icon>
+                    <div class="avatar">张</div>
+                    <span>管理员</span>
+                </div>
+            </el-header>
+            <el-main class="main">
+
+                <!-- ========== 系统概览 ========== -->
+                <div v-show="activeMenu==='dashboard'">
+                    <el-row :gutter="16" style="margin-bottom:16px;">
+                        <el-col :span="6">
+                            <div class="stat-card">
+                                <div class="stat-icon blue"></div>
+                                <div>
+                                    <div class="stat-num">{{ stats.suites }}</div>
+                                    <div class="stat-label">测试套件</div>
+                                </div>
+                            </div>
+                        </el-col>
+                        <el-col :span="6">
+                            <div class="stat-card">
+                                <div class="stat-icon orange"></div>
+                                <div>
+                                    <div class="stat-num">{{ stats.cases }}</div>
+                                    <div class="stat-label">测试用例</div>
+                                </div>
+                            </div>
+                        </el-col>
+                        <el-col :span="6">
+                            <div class="stat-card">
+                                <div class="stat-icon green">√</div>
+                                <div>
+                                    <div class="stat-num">{{ stats.passed }}</div>
+                                    <div class="stat-label">通过 / 共 {{ stats.total_results }}</div>
+                                </div>
+                            </div>
+                        </el-col>
+                        <el-col :span="6">
+                            <div class="stat-card">
+                                <div class="stat-icon red">×</div>
+                                <div>
+                                    <div class="stat-num">{{ stats.failed }}</div>
+                                    <div class="stat-label">失败 · 错误 {{ stats.error }}</div>
+                                </div>
+                            </div>
+                        </el-col>
+                    </el-row>
+
+                    <el-row :gutter="16" style="margin-bottom:16px;">
+                        <el-col :span="8">
+                            <div class="chart-box">
+                                <div class="chart-title">执行状态分布</div>
+                                <div id="pieChart" style="height:280px;"></div>
+                            </div>
+                        </el-col>
+                        <el-col :span="8">
+                            <div class="chart-box">
+                                <div class="chart-title">用例分类分布</div>
+                                <div id="pieCatChart" style="height:280px;"></div>
+                            </div>
+                        </el-col>
+                        <el-col :span="8">
+                            <div class="chart-box">
+                                <div class="chart-title">近 7 天执行趋势</div>
+                                <div id="trendChart" style="height:280px;"></div>
+                            </div>
+                        </el-col>
+                    </el-row>
+
+                    <div class="chart-box">
+                        <div class="chart-title">最近执行记录</div>
+                        <el-table :data="recentRuns" style="width:100%">
+                            <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                            <el-table-column prop="suite_name" label="套件"></el-table-column>
+                            <el-table-column prop="status" label="状态" width="120">
+                                <template #default="{row}">
+                                    <span :class="'status-'+row.status">● {{ row.status }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="total" label="总数" width="80"></el-table-column>
+                            <el-table-column prop="passed" label="通过" width="80"></el-table-column>
+                            <el-table-column prop="failed" label="失败" width="80"></el-table-column>
+                            <el-table-column prop="duration_ms" label="耗时(ms)" width="120"></el-table-column>
+                            <el-table-column prop="started_at" label="开始时间" width="180"></el-table-column>
+                        </el-table>
+                    </div>
+                </div>
+
+                <!-- ========== 手工验证台（自己填数据，跑一次） ========== -->
+                <div v-show="activeMenu==='run'">
+                    <el-row :gutter="16">
+                        <el-col :span="8">
+                            <div class="chart-box">
+                                <div class="chart-title">① 选场景</div>
+                                <div v-for="s in suites" :key="s.id"
+                                     @click="selectSuite(s)"
+                                     :style="{
+                                        padding:'12px 14px', marginBottom:'8px',
+                                        borderRadius:'8px', cursor:'pointer',
+                                        border: currentSuite && currentSuite.id===s.id
+                                            ? '2px solid #409eff' : '1px solid #e8eaf0',
+                                        background: currentSuite && currentSuite.id===s.id
+                                            ? '#ecf5ff' : '#fff',
+                                        transition:'all 0.15s'
+                                     }">
+                                    <div style="font-size:13px; font-weight:600; color:#1f2d3d;">
+                                        {{ s.module }}
+                                    </div>
+                                    <div style="font-size:11px; color:#909399; margin-top:3px;">
+                                        {{ SCENE_HINT[s.module] }}
+                                    </div>
+                                </div>
+                                <el-empty v-if="suites.length===0" description="暂无套件"></el-empty>
+                            </div>
+                        </el-col>
+
+                        <el-col :span="8">
+                            <div class="chart-box">
+                                <div class="chart-title">② 自己填参数（留空用预置值）</div>
+                                <div v-if="!currentSuite">
+                                    <el-empty description="请先选择左侧场景" :image-size="60"></el-empty>
+                                </div>
+                                <div v-else>
+                                    <el-form label-position="top" size="small">
+                                        <el-form-item v-for="f in currentForm" :key="f.key" :label="f.label">
+                                            <el-input v-model="formData[f.key]"
+                                                      :placeholder="f.placeholder"></el-input>
+                                        </el-form-item>
+                                    </el-form>
+                                    <el-alert type="info" :closable="false" show-icon
+                                              title="这里不做文档断言：只跑一次，把系统实际返回的结果给你看"></el-alert>
+                                    <el-button type="primary" :loading="running"
+                                               @click="runManual"
+                                               style="width:100%; margin-top:12px;">
+                                        执行一次
+                                    </el-button>
+                                </div>
+                            </div>
+                        </el-col>
+
+                        <el-col :span="8">
+                            <div class="chart-box">
+                                <div class="chart-title">③ 执行结果（系统实际返回）</div>
+                                <div v-if="!lastResult" style="padding:40px 0; text-align:center; color:#c0c4cc; font-size:13px;">
+                                    尚未执行
+                                </div>
+                                <div v-else
+                                     :style="{
+                                        padding:'14px', borderRadius:'8px',
+                                        border: rStyle(lastResult.status).border,
+                                        background: rStyle(lastResult.status).bg
+                                     }">
+                                    <div :style="{ fontWeight:700, fontSize:'15px', marginBottom:'8px',
+                                                   color: rStyle(lastResult.status).color }">
+                                        {{ rStyle(lastResult.status).text }}
+                                    </div>
+                                    <div v-if="lastResult.actual"
+                                         style="font-size:14px; color:#1f2d3d; font-weight:600;
+                                                line-height:1.6; margin-bottom:8px;">
+                                        {{ lastResult.actual }}
+                                    </div>
+                                    <div v-if="lastResult.reason"
+                                         style="font-size:12px; color:#dc2626;
+                                                line-height:1.5; margin-bottom:8px;">
+                                        {{ lastResult.reason }}
+                                    </div>
+                                    <div style="font-size:12px; color:#666; margin-bottom:8px; line-height:1.5;">
+                                        {{ lastResult.msg }}
+                                    </div>
+                                    <div style="font-size:11px; color:#999; padding-top:8px; border-top:1px solid rgba(0,0,0,0.06);">
+                                        Run ID: {{ lastResult.run_id }}
+                                    </div>
+                                </div>
+                            </div>
+                        </el-col>
+                    </el-row>
+
+                    <!-- 该场景对应的文档用例（只读参考） -->
+                    <div v-if="currentSuite" class="chart-box" style="margin-top:16px;">
+                        <div class="chart-title">
+                            该场景的文档用例（{{ currentCases.length }} 条：P0 {{ caseStat.P0 }} / P1 {{ caseStat.P1 }} / P2 {{ caseStat.P2 }}）
+                            —— 仅作对照参考，回归执行请到"测试套件"页
+                        </div>
+                        <el-table :data="currentCases" style="width:100%">
+                            <el-table-column prop="case_code" label="编号" width="150"></el-table-column>
+                            <el-table-column prop="name" label="用例名称"></el-table-column>
+                            <el-table-column prop="category" label="分类" width="90"></el-table-column>
+                            <el-table-column prop="priority" label="优先级" width="90">
+                                <template #default="{row}">
+                                    <el-tag :type="priorityType(row.priority)" size="small">
+                                        {{ row.priority }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="expected" label="预期结果"></el-table-column>
+                            <el-table-column label="测试步骤" :formatter="stepsText"
+                                             show-overflow-tooltip></el-table-column>
+                        </el-table>
+                    </div>
+                </div>
+
+                <!-- ========== 测试套件 ========== -->
+                <div v-show="activeMenu==='suites'">
+                    <div class="chart-box">
+                        <div class="chart-title">测试套件列表（独立 pytest 项目）</div>
+                        <el-table :data="suites" style="width:100%">
+                            <el-table-column prop="id" label="ID" width="70"></el-table-column>
+                            <el-table-column prop="name" label="套件名称"></el-table-column>
+                            <el-table-column prop="module" label="模块" width="120"></el-table-column>
+                            <el-table-column prop="path" label="pytest 路径"></el-table-column>
+                            <el-table-column prop="description" label="描述"></el-table-column>
+                            <el-table-column label="操作" width="250">
+                                <template #default="{row}">
+                                    <el-button type="primary" size="small"
+                                               :loading="suiteRunning===row.id"
+                                               @click="runWholeSuite(row)">
+                                        执行整套件
+                                    </el-button>
+                                    <el-button size="small"
+                                               @click="selectSuite(row); onMenuSelect('cases')">
+                                        看用例
+                                    </el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </div>
+                </div>
+
+                <!-- ========== 测试用例 ========== -->
+                <div v-show="activeMenu==='cases'">
+                    <div class="chart-box">
+                        <div class="chart-title">测试用例列表</div>
+                        <el-table :data="cases" style="width:100%">
+                            <el-table-column prop="case_code" label="编号" width="140"></el-table-column>
+                            <el-table-column prop="name" label="用例名称"></el-table-column>
+                            <el-table-column prop="suite_name" label="所属套件" width="140"></el-table-column>
+                            <el-table-column prop="category" label="分类" width="90"></el-table-column>
+                            <el-table-column prop="priority" label="优先级" width="90">
+                                <template #default="{row}">
+                                    <el-tag :type="priorityType(row.priority)" size="small">
+                                        {{ row.priority }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="expected" label="预期结果"></el-table-column>
+                            <el-table-column label="测试步骤" :formatter="stepsText"
+                                             show-overflow-tooltip></el-table-column>
+                        </el-table>
+                    </div>
+                </div>
+
+                <!-- ========== 执行记录 ========== -->
+                <div v-show="activeMenu==='runs'">
+                    <div class="chart-box">
+                        <div class="chart-title">执行记录（点击行查看详情）</div>
+                        <el-table :data="runs" style="width:100%; cursor:pointer;"
+                                  @row-click="openRunDetail">
+                            <el-table-column prop="id" label="Run ID" width="80"></el-table-column>
+                            <el-table-column label="套件" width="150">
+                                <template #default="{row}">{{ row.suite_name || '手工验证' }}</template>
+                            </el-table-column>
+                            <el-table-column label="类型" width="110">
+                                <template #default="{row}">{{ runType(row.triggered_by) }}</template>
+                            </el-table-column>
+                            <el-table-column prop="status" label="状态" width="120">
+                                <template #default="{row}">
+                                    <span :class="'status-'+row.status">● {{ row.status }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="total" label="总数" width="70"></el-table-column>
+                            <el-table-column prop="passed" label="通过" width="70"></el-table-column>
+                            <el-table-column prop="failed" label="失败" width="70"></el-table-column>
+                            <el-table-column prop="error" label="错误" width="70"></el-table-column>
+                            <el-table-column prop="duration_ms" label="耗时(ms)" width="110"></el-table-column>
+                            <el-table-column prop="started_at" label="开始时间" width="180"></el-table-column>
+                        </el-table>
+                    </div>
+                </div>
+
+                <!-- ========== 结果明细 ========== -->
+                <div v-show="activeMenu==='results'">
+                    <div class="chart-box">
+                        <div class="chart-title">结果明细（失败原因 / 手工验证的实际提示）</div>
+                        <el-table :data="results" style="width:100%">
+                            <el-table-column prop="case_name" label="用例"></el-table-column>
+                            <el-table-column label="套件" width="140">
+                                <template #default="{row}">{{ row.suite_name || '手工验证' }}</template>
+                            </el-table-column>
+                            <el-table-column label="类型" width="110">
+                                <template #default="{row}">{{ runType(row.triggered_by) }}</template>
+                            </el-table-column>
+                            <el-table-column prop="status" label="状态" width="90">
+                                <template #default="{row}">
+                                    <span :class="'status-'+row.status">{{ row.status }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="duration_ms" label="耗时(ms)" width="100"></el-table-column>
+                            <el-table-column prop="failure_reason" label="失败原因"></el-table-column>
+                            <el-table-column prop="actual_result" label="实际提示"></el-table-column>
+                            <el-table-column label="操作" width="100">
+                                <template #default="{row}">
+                                    <el-button size="small" @click="showTrace(row)"
+                                               :disabled="!row.traceback">详情</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </div>
+                </div>
+
+            </el-main>
+        </el-container>
+    </el-container>
+
+    <el-dialog v-model="detailVisible" title="执行详情" width="900px">
+        <div v-if="currentRun">
+            <el-descriptions :column="3" border style="margin-bottom:16px;">
+                <el-descriptions-item label="Run ID">{{ currentRun.run.id }}</el-descriptions-item>
+                <el-descriptions-item label="状态">
+                    <span :class="'status-'+currentRun.run.status">{{ currentRun.run.status }}</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="耗时">{{ currentRun.run.duration_ms }} ms</el-descriptions-item>
+                <el-descriptions-item label="总数">{{ currentRun.run.total }}</el-descriptions-item>
+                <el-descriptions-item label="通过">{{ currentRun.run.passed }}</el-descriptions-item>
+                <el-descriptions-item label="失败">{{ currentRun.run.failed }}</el-descriptions-item>
+            </el-descriptions>
+            <el-table :data="currentRun.results" max-height="400">
+                <el-table-column prop="case_name" label="用例"></el-table-column>
+                <el-table-column prop="status" label="状态" width="90">
+                    <template #default="{row}">
+                        <span :class="'status-'+row.status">{{ row.status }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="failure_reason" label="失败原因"></el-table-column>
+                <el-table-column prop="actual_result" label="实际提示"></el-table-column>
+            </el-table>
+        </div>
+    </el-dialog>
+
+    <el-dialog v-model="traceVisible" title="失败堆栈" width="900px">
+        <div class="traceback">{{ traceContent }}</div>
+    </el-dialog>
+</div>
+
+<script>
+const { createApp, ref, onMounted, nextTick } = Vue;
+
+// 手工验证台的参数表单：留空用预置值，填了就以你填的为准（PB_<字段名> 传给测试）
+const SUITE_FORMS = {
+    '登录模块测试': [
+        {key:'username', label:'用户名', placeholder:'留空 = admin；也可填个没注册过的用户名，假装新用户'},
+        {key:'password', label:'密码', placeholder:'留空 = admin123'},
+    ],
+    '注册模块测试': [
+        {key:'username', label:'用户名', placeholder:'留空 = 平台自动造一个新用户（如 alice1758…）'},
+        {key:'password', label:'密码', placeholder:'留空 = Pass123'},
+        {key:'confirm',  label:'确认密码', placeholder:'留空 = 与密码相同'},
+    ],
+    '转账模块测试': [
+        {key:'from_account', label:'源账户', placeholder:'留空 = 10001（admin 的账户）'},
+        {key:'to_account',   label:'目标账户', placeholder:'留空 = 10002'},
+        {key:'amount',       label:'转账金额（元）', placeholder:'留空 = 100'},
+    ],
+};
+
+// 左侧场景卡片副标题
+const SCENE_HINT = {
+    '登录': '用你填的账号密码登录一次',
+    '注册': '你填的就是新用户，看系统怎么答',
+    '转账': '以预置账号 admin 登录后转一次',
+};
+createApp({
+    setup() {
+        const activeMenu = ref('dashboard');
+        const pageTitle = ref('系统概览');
+        const stats = ref({ suites:0, cases:0, runs:0, passed:0, failed:0, error:0, total_results:0 });
+        const suites = ref([]);
+        const cases = ref([]);
+        const runs = ref([]);
+        const results = ref([]);
+        const recentRuns = ref([]);
+        const detailVisible = ref(false);
+        const traceVisible = ref(false);
+        const traceContent = ref('');
+        const currentRun = ref(null);
+
+        // 执行测试相关
+        const currentSuite = ref(null);
+        const currentCases = ref([]);
+        const currentForm  = ref([]);
+        const formData     = ref({});
+        const running      = ref(false);
+        const lastResult   = ref(null);
+
+        const titles = {
+            dashboard: '系统概览', run: '执行测试', suites: '测试套件',
+            cases: '测试用例', runs: '执行记录', results: '结果明细'
+        };
+
+        const onMenuSelect = (idx) => {
+            activeMenu.value = idx;
+            pageTitle.value = titles[idx];
+            if (idx === 'dashboard') { loadStats(); loadRecentRuns(); }
+            if (idx === 'run')       { loadSuites(); }
+            if (idx === 'suites')    { loadSuites(); }
+            if (idx === 'cases')     { loadCases(); }
+            if (idx === 'runs')      { loadRuns(); }
+            if (idx === 'results')   { loadResults(); }
+        };
+
+        const priorityType = (p) => ({ P0:'danger', P1:'warning', P2:'info' }[p] || 'info');
+
+        // 执行结果卡片样式：手工验证按"这次操作成没成"判 PASS / FAIL
+        const RESULT_STYLE = {
+            RUNNING: { border:'1.5px solid #bfdbfe', bg:'#eff6ff', color:'#2563eb', text:'⏳ 执行中' },
+            PASS:    { border:'1.5px solid #a7f3d0', bg:'#ecfdf5', color:'#059669', text:'✓ PASS' },
+            FAIL:    { border:'1.5px solid #fecaca', bg:'#fef2f2', color:'#dc2626', text:'✗ FAIL' },
+            ERROR:   { border:'1.5px solid #fde68a', bg:'#fffbeb', color:'#d97706', text:'⚠ ERROR' },
+            SKIP:    { border:'1.5px solid #e5e7eb', bg:'#f9fafb', color:'#6b7280', text:'○ SKIP' },
+        };
+        const rStyle = (s) => RESULT_STYLE[s] || RESULT_STYLE.FAIL;
+
+        // 执行类型：标准执行（45 条用例回归）/ 带参数执行 / 手工验证
+        const runType = (t) => ({ web: '标准执行', 'web+params': '带参数执行',
+                                  manual: '手工验证' }[t] || t || '-');
+
+        // 测试步骤（库里存的是 JSON 数组，展示成 "步骤1 → 步骤2"）
+        const stepsText = (row) => {
+            try {
+                const arr = JSON.parse(row.steps || '[]');
+                return Array.isArray(arr) ? arr.join(' → ') : (row.steps || '');
+            } catch (e) { return row.steps || ''; }
+        };
+
+        const loadStats = async () => {
+            stats.value = await (await fetch('api/stats')).json();
+        };
+        const loadSuites = async () => {
+            suites.value = await (await fetch('api/suites')).json();
+        };
+        const loadCases = async () => {
+            cases.value = await (await fetch('api/cases')).json();
+        };
+        const loadRuns = async () => {
+            runs.value = await (await fetch('api/runs')).json();
+        };
+        const loadResults = async () => {
+            results.value = await (await fetch('api/results')).json();
+        };
+        const loadRecentRuns = async () => {
+            recentRuns.value = (await (await fetch('api/runs')).json()).slice(0, 8);
+        };
+
+        // ---------- 图表：用 setTimeout 延后，避开 v-show 造成的 0 尺寸 ----------
+        let pieInst = null, pieCatInst = null, trendInst = null;
+
+        const renderCharts = async () => {
+            const data = await (await fetch('api/charts')).json();
+            await nextTick();
+            setTimeout(() => {
+                const el1 = document.getElementById('pieChart');
+                const el2 = document.getElementById('pieCatChart');
+                const el3 = document.getElementById('trendChart');
+                if (!el1 || !el2 || !el3) return;
+
+                if (pieInst) pieInst.dispose();
+                if (pieCatInst) pieCatInst.dispose();
+                if (trendInst) trendInst.dispose();
+
+                pieInst = echarts.init(el1);
+                pieInst.setOption({
+                    tooltip: { trigger:'item' },
+                    legend: { bottom: 0 },
+                    color: ['#67c23a','#f56c6c','#e6a23c','#909399'],
+                    series: [{
+                        type:'pie', radius:['40%','65%'],
+                        label: { show:true, formatter:'{b}\n{c}' },
+                        data: data.pie.length ? data.pie : [{name:'暂无数据',value:0}]
+                    }]
+                });
+
+                pieCatInst = echarts.init(el2);
+                pieCatInst.setOption({
+                    tooltip: { trigger:'item' },
+                    legend: { bottom: 0 },
+                    color: ['#409eff','#67c23a','#e6a23c','#f56c6c','#909399'],
+                    series: [{
+                        type:'pie', radius:'60%',
+                        label: { formatter:'{b}\n{d}%' },
+                        data: data.pie_cat.length ? data.pie_cat : [{name:'暂无数据',value:0}]
+                    }]
+                });
+
+                trendInst = echarts.init(el3);
+                trendInst.setOption({
+                    tooltip: { trigger:'axis' },
+                    grid: { left:40, right:20, top:20, bottom:40 },
+                    xAxis: { type:'category', data: data.trend.map(x=>x.d) },
+                    yAxis: { type:'value' },
+                    legend: { bottom: 0 },
+                    series: [
+                        { name:'总数', type:'line', smooth:true, data: data.trend.map(x=>x.runs) },
+                        { name:'通过', type:'line', smooth:true, data: data.trend.map(x=>x.passed) },
+                        { name:'失败', type:'line', smooth:true, data: data.trend.map(x=>x.failed) }
+                    ]
+                });
+
+                window.addEventListener('resize', () => {
+                    pieInst && pieInst.resize();
+                    pieCatInst && pieCatInst.resize();
+                    trendInst && trendInst.resize();
+                });
+            }, 50);
+        };
+
+        // ---------- 执行测试 ----------
+        const caseStat = ref({ P0:0, P1:0, P2:0 });
+
+        const selectSuite = async (s) => {
+            currentSuite.value = s;
+            currentCases.value = await (await fetch('api/cases?suite_id=' + s.id)).json();
+            const stat = { P0:0, P1:0, P2:0 };
+            currentCases.value.forEach(c => { if (c.priority in stat) stat[c.priority]++; });
+            caseStat.value = stat;
+            const form = SUITE_FORMS[s.name] || [];
+            currentForm.value = form;
+            const fd = {};
+            form.forEach(f => fd[f.key] = '');
+            formData.value = fd;
+            lastResult.value = null;
+        };
+
+        // 手工验证：拿你填的参数跑一次真实操作（不做文档断言，只看系统怎么答）
+        const runManual = async () => {
+            if (!currentSuite.value) return;
+            running.value = true;
+            lastResult.value = null;
+            try {
+                const r = await fetch('api/manual/run', {
+                    method:'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        scenario: currentSuite.value.path.replace('_suite', ''),
+                        params: formData.value
+                    })
+                });
+                const d = await r.json();
+                if (d.ok) {
+                    lastResult.value = { status:'RUNNING', msg:'已启动：pytest + 无头 Edge 正在点击真实页面…', run_id: d.run_id };
+                    pollRun(d.run_id);
+                } else {
+                    lastResult.value = { status:'FAIL', msg: d.error || '启动失败', run_id:'-' };
+                }
+            } catch(e) {
+                lastResult.value = { status:'FAIL', msg:'网络错误：' + e.message, run_id:'-' };
+            } finally {
+                running.value = false;
+            }
+        };
+
+        // 测试套件页：整套件回归执行
+        const suiteRunning = ref('');
+        const runWholeSuite = async (row) => {
+            suiteRunning.value = row.id;
+            try {
+                const r = await fetch('api/suites/' + row.id + '/run', {
+                    method:'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({})
+                });
+                const d = await r.json();
+                if (d.ok) {
+                    ElementPlus.ElMessage.success(
+                        `已启动「${row.name}」整套件执行（Run ID ${d.run_id}），到"执行记录"看结果`);
+                    loadRuns();
+                } else {
+                    ElementPlus.ElMessage.error(d.error || '启动失败');
+                }
+            } catch(e) {
+                ElementPlus.ElMessage.error('网络错误：' + e.message);
+            } finally {
+                suiteRunning.value = '';
+            }
+        };
+
+        const pollRun = async (runId) => {
+            let tries = 0;
+            const timer = setInterval(async () => {
+                tries++;
+                try {
+                    const r = await fetch('api/runs/' + runId);
+                    const d = await r.json();
+                    if (d.run && d.run.status !== 'RUNNING') {
+                        clearInterval(timer);
+                        const first = (d.results || [])[0] || {};
+                        lastResult.value = {
+                            status: d.run.status,        // PASS / FAIL / ERROR
+                            actual: first.actual_result || '',
+                            reason: first.failure_reason || '',
+                            msg: `耗时 ${(d.run.duration_ms/1000).toFixed(1)}s · pytest + 无头 Edge`,
+                            run_id: runId
+                        };
+                        loadStats(); loadRecentRuns();
+                    } else {
+                        lastResult.value = {
+                            status:'RUNNING',
+                            msg:'pytest + 无头 Edge 正在点击真实页面…',
+                            run_id: runId
+                        };
+                    }
+                } catch(e) {}
+                if (tries > 120) clearInterval(timer);
+            }, 1500);
+        };
+
+        const openRunDetail = async (row) => {
+            currentRun.value = await (await fetch('api/runs/' + row.id)).json();
+            detailVisible.value = true;
+        };
+
+        const showTrace = (row) => {
+            traceContent.value = row.traceback || '无堆栈信息';
+            traceVisible.value = true;
+        };
+
+        onMounted(async () => {
+            await loadStats();
+            await loadRecentRuns();
+            renderCharts();
+        });
+
+        return {
+            activeMenu, pageTitle, stats, suites, cases, runs, results, recentRuns,
+            detailVisible, traceVisible, traceContent, currentRun,
+            currentSuite, currentCases, caseStat, currentForm, formData,
+            running, lastResult, suiteRunning, SCENE_HINT,
+            onMenuSelect, priorityType, stepsText, rStyle, runType, selectSuite, runManual,
+            runWholeSuite, openRunDetail, showTrace
+        };
+    }
+}).use(ElementPlus).mount('#app');
+</script>
+</body>
+</html>

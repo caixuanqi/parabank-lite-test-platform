@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>ParaBank Lite — 账户概览</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+       background:#f0f4f8; padding:30px; }
+.card { background:#fff; border-radius:12px; padding:28px 32px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.08);
+        max-width:820px; margin:0 auto; }
+h1 { font-size:20px; margin-bottom:6px; color:#1a3d7c; }
+.subtitle { font-size:13px; color:#909399; margin-bottom:20px; }
+.topbar { display:flex; justify-content:space-between; align-items:center;
+          margin-bottom:20px; padding-bottom:16px;
+          border-bottom:1px solid #ebeef5; }
+.topbar .user { font-size:13px; color:#606266; }
+.topbar .user b { color:#1a3d7c; }
+.topbar a { font-size:13px; color:#409eff; text-decoration:none; margin-left:14px; }
+table { width:100%; border-collapse:collapse; margin-top:12px; }
+th { text-align:left; padding:10px 12px; background:#fafbfc;
+     font-size:12px; color:#909399; font-weight:500;
+     border-bottom:1px solid #ebeef5; }
+td { padding:12px; font-size:13px; border-bottom:1px solid #f5f7fa; }
+.balance { color:#67c23a; font-weight:600; }
+</style></head>
+<body>
+<div class="card">
+    <div class="topbar">
+        <div class="user">欢迎，<b>{{ username }}</b></div>
+        <div>
+            <a href="/parabank/transfer">转账</a>
+            <a href="/parabank/transactions">交易记录</a>
+            <a href="/parabank/logout" id="btn-logout">退出</a>
+        </div>
+    </div>
+    <h1>账户概览</h1>
+    <p class="subtitle">您的所有账户</p>
+    <table id="accountTable">
+        <thead><tr><th>账户号</th><th>余额</th><th>开户时间</th></tr></thead>
+        <tbody>
+            {% for a in accounts %}
+            <tr>
+                <td>{{ a.account_number }}</td>
+                <td class="balance">¥ {{ "%.2f"|format(a.balance) }}</td>
+                <td>{{ a.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body></html>

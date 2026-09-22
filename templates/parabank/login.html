@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>ParaBank Lite — 登录</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+       background:#f0f4f8; color:#1f2d3d;
+       display:flex; align-items:center; justify-content:center;
+       min-height:100vh; padding:20px; }
+.card { background:#fff; border-radius:12px; padding:32px 36px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.08); width:100%; max-width:420px; }
+h1 { font-size:20px; margin-bottom:6px; color:#1a3d7c; }
+.subtitle { font-size:13px; color:#909399; margin-bottom:24px; }
+.field { margin-bottom:16px; }
+.field label { display:block; font-size:13px; color:#606266;
+               margin-bottom:6px; font-weight:500; }
+.field input { width:100%; padding:10px 12px; border:1.5px solid #dcdfe6;
+               border-radius:6px; font-size:14px; font-family:inherit; }
+.field input:focus { outline:none; border-color:#409eff;
+                     box-shadow:0 0 0 3px rgba(64,158,255,0.1); }
+button { width:100%; padding:11px; background:#1a3d7c; color:#fff;
+         border:none; border-radius:6px; font-size:14px; font-weight:600;
+         cursor:pointer; font-family:inherit; }
+button:hover { background:#153065; }
+.msg { padding:10px 14px; border-radius:6px; font-size:13px;
+       margin-bottom:16px; line-height:1.5; }
+.msg.error { background:#fef0f0; color:#f56c6c; border:1px solid #fde2e2; }
+.links { text-align:center; margin-top:18px; font-size:13px; color:#909399; }
+.links a { color:#409eff; text-decoration:none; margin:0 6px; }
+</style></head>
+<body>
+<div class="card">
+    <h1>ParaBank Lite 登录</h1>
+    <p class="subtitle">简易银行系统 · 用于测试演示</p>
+    {% if error %}<div class="msg error">{{ error }}</div>{% endif %}
+    <form method="post" action="/parabank/login">
+        <div class="field">
+            <label>用户名</label>
+            <input type="text" name="username" id="username"
+                   placeholder="3-20 位字母/数字/下划线" autocomplete="off">
+        </div>
+        <div class="field">
+            <label>密码</label>
+            <input type="password" name="password" id="password" placeholder="6-20 位">
+        </div>
+        <button type="submit" id="btn-login">登录</button>
+    </form>
+    <div class="links">还没有账号？<a href="/parabank/register">立即注册</a></div>
+</div>
+</body></html>

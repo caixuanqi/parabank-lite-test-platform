@@ -1,0 +1,7 @@
+flask>=3.0
+selenium>=4.20
+pytest>=8.0
+pytest-json-report>=1.5
+pytest-html>=4.0
+requests>=2.31
+webdriver-manager>=4.0
