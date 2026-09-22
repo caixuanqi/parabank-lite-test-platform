@@ -174,7 +174,7 @@ python -m venv .venv
 关掉注入缺陷（恢复"完全符合文档"的系统，39 条应当全绿）：把 `parabank_lite.py` 里的
 `INJECT_DEFECTS` 改为 `False`，重启平台即可。
 
-## 截图
+## 图片展示
 
 平台概览（用例数、通过率、状态分布、近 7 天趋势）：
 
