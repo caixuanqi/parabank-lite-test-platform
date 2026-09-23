@@ -54,6 +54,7 @@ body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; }
     max-height:400px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
 .chart-empty { text-align:center; color:#c0c4cc; font-size:13px;
     padding-top:100px; }
+.chart-note { font-size:12px; color:#909399; line-height:1.5; padding:6px 8px 0; }
 </style>
 </head>
 <body>
@@ -119,8 +120,10 @@ body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; }
                             <div class="stat-card">
                                 <div class="stat-icon green">√</div>
                                 <div>
-                                    <div class="stat-num">{{ stats.passed }}</div>
-                                    <div class="stat-label">通过 / 共 {{ stats.total_results }}</div>
+                                    <div class="stat-num">{{ stats.pass_rate }}%</div>
+                                    <div class="stat-label">
+                                        通过率 · 通过 {{ stats.passed }} / 共执行 {{ stats.total_results }} 条
+                                    </div>
                                 </div>
                             </div>
                         </el-col>
@@ -129,7 +132,9 @@ body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; }
                                 <div class="stat-icon red">×</div>
                                 <div>
                                     <div class="stat-num">{{ stats.failed }}</div>
-                                    <div class="stat-label">失败 · 错误 {{ stats.error }}</div>
+                                    <div class="stat-label">
+                                        失败（断言不符）· 脚本错误 {{ stats.error }}
+                                    </div>
                                 </div>
                             </div>
                         </el-col>
@@ -144,8 +149,12 @@ body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; }
                         </el-col>
                         <el-col :span="8">
                             <div class="chart-box">
-                                <div class="chart-title">用例分类分布</div>
-                                <div id="pieCatChart" style="height:280px;"></div>
+                                <div class="chart-title">执行结果按用例分类分布</div>
+                                <div id="pieCatChart" style="height:250px;"></div>
+                                <div class="chart-note">
+                                    分类取自用例表：有效等价类 → 功能，无效等价类 → 异常；
+                                    图中数字为执行结果条数（含历史执行）
+                                </div>
                             </div>
                         </el-col>
                         <el-col :span="8">
@@ -569,12 +578,12 @@ createApp({
 
                 pieCatInst = echarts.init(el2);
                 pieCatInst.setOption({
-                    tooltip: { trigger:'item' },
+                    tooltip: { trigger:'item', formatter:'{b}用例：{c} 条（{d}%）' },
                     legend: { bottom: 0 },
                     color: ['#409eff','#67c23a','#e6a23c','#f56c6c','#909399'],
                     series: [{
                         type:'pie', radius:'60%',
-                        label: { formatter:'{b}\n{d}%' },
+                        label: { formatter:'{b}用例\n{c} 条' },
                         data: data.pie_cat.length ? data.pie_cat : [{name:'暂无数据',value:0}]
                     }]
                 });
