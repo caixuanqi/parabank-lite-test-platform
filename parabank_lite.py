@@ -36,7 +36,7 @@ def validate_login(username, password):
     if not (6 <= len(username) <= 20):
         return False, '用户名长度6-20位'
     if not USERNAME_RE.match(username):
-        return False, '用户名只能含字母、数字、下划线'
+        return False, '用户名只能包含字母、数字和下划线'
     if not password:
         return False, '密码必填'
     if not (6 <= len(password) <= 20):
@@ -104,16 +104,13 @@ def get_db():
 
 
 # 预置演示数据（与 testcase_spec.PRESET_USERS 保持一致，check_consistency.py 会校验）
-# admin_01：登录模块的合规账号（等价类指定），同时持有转账用账户
-#           10001 余额充足 / 10002 转入 / 10003 余额不足专用
-# admin：文档"初始账号"，保留但不再持有账户
-# user_2026：登录/注册等价类中列出的有效数据
+# alice01：测试主账号 —— 登录与转账用例的合规账号，持有转账账户
+#          A=10001（初始 100000.00）、B=10002（0.00）、C=10003（100.00）
+# admin：文档「系统定义」里的初始账号，不持有账户
 PRESET_USERS = [
-    {'username': 'admin_01', 'password': 'Admin@123',
+    {'username': 'alice01', 'password': 'Pass123',
      'accounts': [('10001', 100000.00), ('10002', 0.00), ('10003', 100.00)]},
     {'username': 'admin', 'password': 'admin123', 'accounts': []},
-    {'username': 'user_2026', 'password': 'Pass123',
-     'accounts': [('20002', 0.00)]},
 ]
 
 DEMO_NOT_EXIST_ACCOUNT = '99999'
@@ -202,6 +199,20 @@ def init_parabank_tables():
     reset_demo_data()
     print('[pb] 预置演示数据就绪: ' +
           ', '.join(f"{u['username']}/{u['password']}" for u in PRESET_USERS))
+
+
+def delete_user(username):
+    """删除指定用户及其账户（注册套件执行前用来保证"用户名未注册"）。"""
+    if not username:
+        return
+    conn = get_db()
+    row = conn.execute('SELECT id FROM pb_users WHERE username=?',
+                       (username,)).fetchone()
+    if row:
+        conn.execute('DELETE FROM pb_accounts WHERE user_id=?', (row['id'],))
+        conn.execute('DELETE FROM pb_users WHERE id=?', (row['id'],))
+        conn.commit()
+    conn.close()
 
 
 @pb_bp.route('/')

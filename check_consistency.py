@@ -23,13 +23,13 @@ DATA_LAYER_CASES = {
     'LOGIN_002': '密码比对（check_password_hash）',
     'LOGIN_003': '账号存在性查询',
     'REG_010': '用户名唯一性查询',
-    'TRAN_14': '源账户余额校验',
-    'TRAN_16': '目标账户存在性查询',
+    'TRAN_016': '源账户余额校验',
+    'TRAN_019': '目标账户存在性查询',
 }
 
 # 本期用例表基线（用例表调整后在这里同步一次，用来兜住误改）
-EXPECT_CASES = {'login': 13, 'register': 22, 'transfer': 16}
-EXPECT_PRIORITY = {'P0': 17, 'P1': 24, 'P2': 10}
+EXPECT_CASES = {'login': 15, 'register': 22, 'transfer': 19}
+EXPECT_PRIORITY = {'P0': 18, 'P1': 37, 'P2': 1}
 
 RESULTS = []
 

@@ -14,7 +14,16 @@ from parabank_lite import reset_demo_data  # noqa: E402
 
 @pytest.fixture(scope='session', autouse=True)
 def demo_data():
-    """套件执行前置：重置预置演示数据（余额/账号等前置条件可重复）。"""
+    """套件执行前置：重置预置演示数据。"""
+    reset_demo_data()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def demo_data_per_case():
+    """转账用例的前置条件是"测试数据已复位"：每条用例前把账户 A/B/C 的余额复位
+    （A=100000.00、B=0.00、C=100.00），避免上一条用例的转账影响下一条。
+    """
     reset_demo_data()
     yield
 

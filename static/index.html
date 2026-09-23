@@ -436,8 +436,8 @@ const { createApp, ref, onMounted, nextTick } = Vue;
 // 手工验证台的参数表单：留空用预置值，填了就以你填的为准（PB_<字段名> 传给测试）
 const SUITE_FORMS = {
     '登录模块测试': [
-        {key:'username', label:'用户名', placeholder:'留空 = admin_01；也可填个没注册过的用户名，假装新用户'},
-        {key:'password', label:'密码', placeholder:'留空 = Admin@123'},
+        {key:'username', label:'用户名', placeholder:'留空 = alice01；也可填个没注册过的用户名，假装新用户'},
+        {key:'password', label:'密码', placeholder:'留空 = Pass123'},
     ],
     '注册模块测试': [
         {key:'username', label:'用户名', placeholder:'留空 = 平台自动造一个新用户（如 alice1758…）'},
@@ -445,8 +445,8 @@ const SUITE_FORMS = {
         {key:'confirm',  label:'确认密码', placeholder:'留空 = 与密码相同'},
     ],
     '转账模块测试': [
-        {key:'from_account', label:'源账户', placeholder:'留空 = 10001（admin_01 的账户）'},
-        {key:'to_account',   label:'目标账户', placeholder:'留空 = 10002'},
+        {key:'from_account', label:'源账户', placeholder:'留空 = 10001（账户 A，alice01 的账户）'},
+        {key:'to_account',   label:'目标账户', placeholder:'留空 = 10002（账户 B）'},
         {key:'amount',       label:'转账金额（元）', placeholder:'留空 = 100'},
     ],
 };
@@ -455,7 +455,7 @@ const SUITE_FORMS = {
 const SCENE_HINT = {
     '登录': '用你填的账号密码登录一次',
     '注册': '你填的就是新用户，看系统怎么答',
-    '转账': '以预置账号 admin_01 登录后转一次',
+    '转账': '以预置账号 alice01 登录后转一次',
 };
 createApp({
     setup() {

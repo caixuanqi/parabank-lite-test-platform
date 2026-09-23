@@ -20,7 +20,7 @@ REPORTS_DIR = os.path.join(BASE_DIR, 'reports')
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # 套件与用例表由 testcase_spec.py 生成；用例表有变更时把版本号 +1，启动即自动重建
-SEED_VERSION = 5
+SEED_VERSION = 6
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 # 会话密钥：优先读环境变量；未设置时用本地演示缺省值
@@ -417,7 +417,7 @@ SCENARIOS = {
 
 # 手工验证台留空字段的预置值（与页面占位符一致）
 MANUAL_DEFAULTS = {
-    'login': {'username': 'admin_01', 'password': 'Admin@123'},
+    'login': {'username': 'alice01', 'password': 'Pass123'},
     'register': {'password': 'Pass123'},
     'transfer': {'from_account': '10001', 'to_account': '10002', 'amount': '100'},
 }
