@@ -14,9 +14,10 @@ from parabank_lite import reset_demo_data  # noqa: E402
 
 @pytest.fixture(scope='session', autouse=True)
 def demo_data():
-    """套件执行前置：重置预置演示数据。"""
+    """套件执行前置/后置都重置预置演示数据（跑完把 A/B/C 余额复位）。"""
     reset_demo_data()
     yield
+    reset_demo_data()
 
 
 @pytest.fixture(autouse=True)

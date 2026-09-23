@@ -14,9 +14,14 @@ from parabank_lite import delete_user, reset_demo_data  # noqa: E402
 
 @pytest.fixture(scope='session', autouse=True)
 def demo_data():
-    """套件执行前置：重置预置演示数据。"""
+    """套件执行前置/后置都重置预置演示数据。
+
+    注册用例会创建/删除账号（包括把测试主账号 alice01 删掉来测"注册成功"），
+    跑完必须复位，否则之后的转账套件或手工验证会缺账户。
+    """
     reset_demo_data()
     yield
+    reset_demo_data()
 
 
 @pytest.fixture(autouse=True)

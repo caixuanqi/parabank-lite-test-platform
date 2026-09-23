@@ -589,6 +589,10 @@ def api_manual_run():
 
     params = {k: str(v).strip() for k, v in (data.get('params') or {}).items()
               if str(v).strip()}
+    # 手工验证前先把转账主账号与 A/B/C 账户就位（注册套件可能把 alice01 删掉/改小）
+    if scenario in ('login', 'transfer'):
+        ensure_transfer_accounts()
+
     # 留空 = 用预置值（与页面占位符一致）
     for key, value in MANUAL_DEFAULTS[scenario].items():
         params.setdefault(key, value)
@@ -659,7 +663,8 @@ def api_run_suite(suite_id):
     return jsonify({'ok': True, 'run_id': run_id, 'case_code': case_code or None})
 
 
-from parabank_lite import pb_bp, init_parabank_tables
+from parabank_lite import (ensure_transfer_accounts, init_parabank_tables,
+                           pb_bp)
 init_parabank_tables()
 app.register_blueprint(pb_bp, url_prefix='/parabank')
 

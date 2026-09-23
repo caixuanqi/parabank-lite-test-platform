@@ -14,9 +14,12 @@ from parabank_lite import reset_demo_data  # noqa: E402
 
 @pytest.fixture(scope='session', autouse=True)
 def demo_data():
-    """套件执行前置：重置预置演示数据（余额/账号等前置条件可重复）。"""
+    """套件执行前置/后置都重置预置演示数据（余额/账号等前置条件可重复），
+    避免套件跑完把演示数据留在"半残"状态，影响之后的套件或手工验证。
+    """
     reset_demo_data()
     yield
+    reset_demo_data()
 
 
 @pytest.fixture(scope='session')

@@ -152,10 +152,11 @@ def reset_demo_data():
     """恢复预置演示数据：预置账号与余额复位，清空测试新增的账号与交易流水。
 
     套件执行前调用（conftest.py 的 autouse fixture），保证用例前置条件可重复：
-    - 10001 余额 100000.00（TRAN_005 需 ≥ 50000）
-    - 10003 余额 100.00（TRAN_016 余额不足）
-    - 目标账户 10002 存在，99999 不存在
-    - user_2026 已注册（REG_002"用户名已存在"）
+    - 账户 A（10001）余额 100000.00（TRAN_005 需 ≥ 50000）
+    - 账户 B（10002）余额 0.00，作为正常目标账户
+    - 账户 C（10003）余额 100.00（TRAN_016 余额不足、TRAN_017 余额等于转账金额）
+    - 账户 D（99999）不存在（TRAN_019 目标账户不存在）
+    - 预置账号 alice01 / admin 就位，其余账号与流水一律清掉
     """
     _ensure_tables()
     conn = get_db()
@@ -179,6 +180,15 @@ def reset_demo_data():
                       (user['username'], generate_password_hash(user['password'])))
             uid = c.lastrowid
 
+        # 清掉该预置账号名下多余的账户（例如注册流程给它留下的 0 元账户）
+        if user['accounts']:
+            keep = ','.join('?' * len(user['accounts']))
+            c.execute(f'DELETE FROM pb_accounts WHERE user_id=? '
+                      f'AND account_number NOT IN ({keep})',
+                      [uid] + [acc for acc, _ in user['accounts']])
+        else:
+            c.execute('DELETE FROM pb_accounts WHERE user_id=?', (uid,))
+
         for acc_no, balance in user['accounts']:
             exists = c.execute('SELECT id FROM pb_accounts WHERE account_number=?',
                                (acc_no,)).fetchone()
@@ -190,6 +200,46 @@ def reset_demo_data():
                           'VALUES (?, ?, ?)', (uid, acc_no, balance))
 
     c.execute('DELETE FROM pb_transactions')
+    conn.commit()
+    conn.close()
+
+
+def ensure_transfer_accounts():
+    """确保转账主账号（alice01）与账户 A/B/C 就位、余额为初始值，并清掉名下多余账户。
+
+    手工验证台的登录 / 转账场景在起 pytest 之前调用，避免"注册套件把 alice01
+    删掉/改小"之后账户缺失，导致转账报"目标账户不存在"或下拉里选到 0 元账户。
+    """
+    _ensure_tables()
+    user = PRESET_USERS[0]          # alice01：登录与转账的合规账号
+    conn = get_db()
+    c = conn.cursor()
+
+    row = c.execute('SELECT id FROM pb_users WHERE username=?',
+                    (user['username'],)).fetchone()
+    if row:
+        uid = row['id']
+        c.execute('UPDATE pb_users SET password_hash=? WHERE id=?',
+                  (generate_password_hash(user['password']), uid))
+    else:
+        c.execute('INSERT INTO pb_users (username, password_hash) VALUES (?, ?)',
+                  (user['username'], generate_password_hash(user['password'])))
+        uid = c.lastrowid
+
+    keep = [acc for acc, _ in user['accounts']]
+    marks = ','.join('?' * len(keep))
+    c.execute(f'DELETE FROM pb_accounts WHERE user_id=? '
+              f'AND account_number NOT IN ({marks})', [uid] + keep)
+    for acc_no, balance in user['accounts']:
+        exists = c.execute('SELECT id FROM pb_accounts WHERE account_number=?',
+                           (acc_no,)).fetchone()
+        if exists:
+            c.execute('UPDATE pb_accounts SET user_id=?, balance=? '
+                      'WHERE account_number=?', (uid, balance, acc_no))
+        else:
+            c.execute('INSERT INTO pb_accounts (user_id, account_number, balance) '
+                      'VALUES (?, ?, ?)', (uid, acc_no, balance))
+
     conn.commit()
     conn.close()
 
