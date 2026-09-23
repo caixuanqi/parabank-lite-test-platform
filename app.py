@@ -348,13 +348,14 @@ def api_charts():
     ''').fetchall()
     pie_cat = [{'name': r['category'] or '未分类', 'value': r['c']} for r in cat_rows]
 
-    # 折线图：近 7 天执行数量
+    # 折线图：近 7 天执行数量（不含手工验证执行，与统计口径一致）
     trend = conn.execute('''
         SELECT DATE(started_at) d,
                COUNT(*) runs,
                SUM(passed) passed,
                SUM(failed) failed
         FROM suite_runs
+        WHERE COALESCE(triggered_by, '') != 'manual'
         GROUP BY DATE(started_at)
         ORDER BY d DESC LIMIT 7
     ''').fetchall()
